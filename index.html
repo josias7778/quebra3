@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Registro de Manutenção</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 2rem;
+      background: #f0f0f0;
+    }
+    label {
+      display: block;
+      margin-top: 1rem;
+      font-weight: bold;
+    }
+    input {
+      width: 100%;
+      padding: 0.5rem;
+      margin-top: 0.3rem;
+    }
+    button {
+      margin-top: 1rem;
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+    }
+    #status {
+      margin-top: 1rem;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h2>Registro de Troca de Peça (por Voz)</h2>
+
+  <label>Linha</label>
+  <input type="text" id="linha" readonly />
+  <button onclick="reconhecerVoz('linha')">Falar Linha</button>
+
+  <label>Código da Peça</label>
+  <input type="text" id="codigo" readonly />
+  <button onclick="reconhecerVoz('codigo')">Falar Código da Peça</button>
+
+  <label>Tipo da Peça</label>
+  <input type="text" id="tipo" readonly />
+  <button onclick="reconhecerVoz('tipo')">Falar Tipo da Peça</button>
+
+  <label>Local de Instalação</label>
+  <input type="text" id="local" readonly />
+  <button onclick="reconhecerVoz('local')">Falar Local de Instalação</button>
+
+  <label>Observação</label>
+  <input type="text" id="obs" readonly />
+  <button onclick="reconhecerVoz('obs')">Falar Observação</button>
+
+  <button onclick="enviarDados()">📤 Enviar para Planilha</button>
+
+  <div id="status"></div>
+
+  <script>
+    const scriptURL = "https://script.google.com/macros/s/AKfycbxSRqkLmp81g5z2soStanpsMBS1XGdT_IOPrMhMZZ0Ux-GUv1DTVMXUfFHXQDslyrI78Q/exec";
+
+    function reconhecerVoz(campoId) {
+      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      recognition.lang = "pt-BR";
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.start();
+
+      recognition.onresult = (event) => {
+        const resultado = event.results[0][0].transcript;
+        document.getElementById(campoId).value = resultado;
+      };
+
+      recognition.onerror = (event) => {
+        document.getElementById("status").innerText = "Erro no reconhecimento de voz: " + event.error;
+      };
+    }
+
+    function enviarDados() {
+      const agora = new Date();
+      const data = agora.toLocaleDateString("pt-BR");
+      const hora = agora.toLocaleTimeString("pt-BR", { hour: '2-digit', minute: '2-digit' });
+
+      const payload = {
+        data: data,
+        hora: hora,
+        linha: document.getElementById("linha").value,
+        codigo: document.getElementById("codigo").value,
+        tipo: document.getElementById("tipo").value,
+        local: document.getElementById("local").value,
+        observacao: document.getElementById("obs").value
+      };
+
+      fetch(scriptURL, {
+        method: "POST",
+        body: JSON.stringify(payload),
+        headers: { "Content-Type": "application/json" }
+      })
+      .then(() => {
+        document.getElementById("status").innerText = "✅ Dados enviados com sucesso!";
+      })
+      .catch(() => {
+        document.getElementById("status").innerText = "❌ Erro ao enviar os dados.";
+      });
+    }
+  </script>
+</body>
+</html>
+
